@@ -1,38 +1,102 @@
 .App {
-  text-align: center;
 }
 
 .App-logo {
-  height: 40vmin;
   pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+header {
+  background-color: #8992a2;
+  min-height: 60px;
   font-size: calc(10px + 2vmin);
   color: white;
+  text-align: left;
+}
+
+header img {
+  float:left;
+  padding: 5px;
+  height: 50px;
+}
+
+header p {
+  margin: 0;
+  padding-top: 10px;
 }
 
 .App-link {
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.subMenu > div {
+  padding: 5px 0 5px 10px;
+}
+
+.subMenu h3 {
+  margin: 5px 0;
+  padding: 2px 0 2px 4px;
+  margin-top: 10px;
+}
+
+
+.upDownControl {
+  background: #61dafb;
+  margin: 5px 0;
+  padding: 5px !important;
+  text-align: center;
+  border-radius: 5px;
+  min-height: 27px;
+}
+
+.upDownControl button {
+  background: cornflowerblue;
+  border: solid black 1px;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+
+.upDownControl button:hover {
+  background: #41d3f5;
+}
+
+.upDownControl button:active {
+  background: blueviolet;
+  border-color: aqua;
+}
+
+.upDownControl button:disabled {
+  background: rgb(42, 174, 182);
+  border-color: rgb(42, 174, 182);
+}
+
+.upDownControl .leftBtn {
+  float: left;
+}
+
+.upDownControl .rightBtn {
+  float: right;
+}
+
+button.actionableItem {
+  background: cornflowerblue;
+  border: solid black 1px;
+  border-radius: 5px;
+  display: block;
+  padding: 10px;
+  width: 100%;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+button.actionableItem:active {
+  background: blueviolet;
+  border-color: aqua;
+}
+
+button.actionableItem:disabled {
+  background: gray;
+}
+
+button.actionableItem:hover {
+  background: #41d3f5;
 }
