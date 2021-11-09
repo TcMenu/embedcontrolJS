@@ -1,5 +1,5 @@
 import React, {Component} from "react";
-import {FloatMenuItem, MenuItem, SubMenuItem} from "./api/MenuItem";
+import {FloatMenuItem, MenuItem, Rgb32MenuItem, SubMenuItem} from "./api/MenuItem";
 import {MenuComponent, MenuController} from "./api/MenuController";
 import {formatForDisplay, formatStringToWire} from "./api/MenuItemFormatter";
 
@@ -70,6 +70,8 @@ export class SubMenuUI extends BaseMenuUI {
                 case "Enum":
                 case "Scroll":
                     return <UpDownEditorUI controller={this.props.controller} itemId={ch.getMenuId()}/>
+                case "Rgb32":
+                    return <Rgb32ColorEditor itemId={ch.getMenuId()} controller={this.props.controller}/>
                 default:
                     return <TextBasedMenuUI controller={this.props.controller} itemId={ch.getMenuId()}/>
             }
@@ -157,7 +159,6 @@ export class TextBasedMenuUI extends BaseMenuUI {
     internalUpdateItem(item: FloatMenuItem) {
         super.internalUpdateItem(item);
         this.setState({value: formatForDisplay(item)} );
-
     }
 
     render() {
@@ -198,5 +199,66 @@ export class ActionableTextMenuItem extends BaseMenuUI {
 
     render() {
         return <button className="actionableItem" onClick={this.buttonPressed}>{this.itemName}{this.state?.value}</button>
+    }
+}
+
+export class Rgb32ColorEditor extends BaseMenuUI {
+    private editingStarted: boolean = false;
+
+    bindAllControls() {
+        this.editingRequested = this.editingRequested.bind(this);
+        this.submitPressed = this.submitPressed.bind(this);
+        this.colorHasChanged = this.colorHasChanged.bind(this);
+    }
+
+    internalUpdateItem(item: Rgb32MenuItem) {
+        super.internalUpdateItem(item);
+        this.setState({value: item.getCurrentValue()} );
+    }
+
+    editingRequested() {
+        this.editingStarted = true;
+        this.itemHasUpdated();
+    }
+
+    colorHasChanged(event: React.FormEvent<HTMLInputElement>) {
+        this.setState({ value: event.currentTarget.value });
+    }
+
+    submitPressed() {
+        try {
+            this.editingStarted = false;
+            let item = this.props.controller.getTree().getMenuItemFor(this.props.itemId);
+            this.props.controller.sendAbsoluteUpdate(this.props.itemId, formatStringToWire(item, this.state.value));
+            this.itemHasUpdated();
+        }
+        catch(e) {
+            alert("Problem submitting value: " + e);
+            console.error("Problem during submit of value");
+            console.error(e);
+        }
+    }
+
+    render() {
+        const colStyle = {
+            backgroundColor: this.state?.value,
+        };
+
+        if(this.editingStarted) {
+            return <div className="upDownControl colorControl" style={colStyle}>
+                <button className="rightBtn" onClick={this.submitPressed}>Submit</button>
+                <form>
+                    <label>
+                        Select color:
+                    </label>
+                    <input type="color" value={this.state?.value} onChange={this.colorHasChanged}/>
+                </form>
+            </div>
+        } else {
+            return <div className="upDownControl colorControl" style={colStyle}>
+                <button className="rightBtn" onClick={this.editingRequested}>Change</button>
+                <div>{this.state?.value}</div>
+            </div>
+        }
     }
 }

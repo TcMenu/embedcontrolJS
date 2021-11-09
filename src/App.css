@@ -40,7 +40,7 @@ header p {
 
 
 .upDownControl {
-  background: #61dafb;
+  background-color: #61dafb;
   margin: 5px 0;
   padding: 5px !important;
   text-align: center;
@@ -108,4 +108,9 @@ button.actionableItem:disabled {
 
 button.actionableItem:hover {
   background: #41d3f5;
+}
+
+.colorControl {
+  border: #555 solid 1px;
+  text-shadow: 2px 2px antiquewhite;
 }
