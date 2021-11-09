@@ -10,17 +10,42 @@ import {
     Rgb32MenuItem,
     ScrollChoiceMenuItem, TextEditMode
 } from "./MenuItem";
+import {TcProtocolError} from "./TagValProtocol";
 
-export function formatToWire(item: MenuItem<any>): string|undefined {
-    if(item instanceof AnalogMenuItem) return item.getCurrentValue().toFixed(0);
-    else if(item instanceof EnumMenuItem) return item.getCurrentValue().toFixed(0);
-    else if(item instanceof FloatMenuItem) return item.getCurrentValue().toFixed(item.getDecimalPlaces());
-    else if(item instanceof BooleanMenuItem) return item.getCurrentValue() ? "1" : "0";
-    else if(item instanceof EditableLargeNumberMenuItem) return item.getCurrentValue().toFixed(item.getDecimalPlaces());
-    else if(item instanceof EditableTextMenuItem) return formatEditableTextWire(item);
-    else if(item instanceof Rgb32MenuItem) return item.getCurrentValue();
-    else if(item instanceof ScrollChoiceMenuItem) return item.getCurrentValue().currentPos.toFixed(0);
-    else return undefined;
+function isTrue(currentValue: string): boolean {
+    return currentValue.charAt(0) === "Y" || currentValue.charAt(0) === "1" || currentValue.charAt(0) === "T";
+}
+
+export function formatStringToWire(item: MenuItem<any>, currentValue: string): string {
+    if(item instanceof AnalogMenuItem) {
+        let num = parseFloat(currentValue);
+        num = Math.round((num * item.getDivisor()) - item.getOffset());
+        if(num < 0 || num > item.getMaxValue()) throw new TcProtocolError(`Number ${num} outside of 0..${item.getMaxValue()}`);
+        return num.toFixed(0);
+    }
+    else if(item instanceof EnumMenuItem) {
+        let num = parseInt(currentValue);
+        if(num < 0 || num >= item.getItemList().length) throw new TcProtocolError(`Enum ${num} outside allowable range`);
+        return item.getCurrentValue().toFixed(0);
+    }
+    else if(item instanceof BooleanMenuItem) return isTrue(currentValue) ? "1" : "0";
+    else if(item instanceof EditableLargeNumberMenuItem) {
+        let flt = parseFloat(currentValue);
+        if(flt < 0 && !item.isNegativeAllowed()) throw new TcProtocolError("Negative value not allowed");
+        return flt.toFixed(item.getDecimalPlaces());
+    }
+    else if(item instanceof EditableTextMenuItem) {
+        return formatEditableTextWire(item, currentValue);
+    }
+    else if(item instanceof Rgb32MenuItem) {
+        if(!currentValue.match("#[0-9A-Fa-f]*")) throw new TcProtocolError("Not in HTML color format");
+        return currentValue;
+    }
+    else if(item instanceof ScrollChoiceMenuItem)  {
+        let num = parseInt(currentValue);
+        return num.toFixed(0) + "-";
+    }
+    else throw new TcProtocolError("Unknown type of item for text conversion");
 }
 
 export function formatForDisplay(item: MenuItem<any>): string {
@@ -67,27 +92,26 @@ function formatAnalogItem(an: AnalogMenuItem) {
     }
 }
 
-function formatEditableTextWire(et: EditableTextMenuItem)  {
-    let text = et.getCurrentValue();
-    if(et.getEditMode() === TextEditMode.PLAIN_TEXT && text.length < et.getTextLength())
-    {
-        return text;
+function formatEditableTextWire(et: EditableTextMenuItem, val: string)  {
+    if(et.getEditMode() === TextEditMode.PLAIN_TEXT) {
+        if(val.length > et.getTextLength()) throw new TcProtocolError("Text too long");
+        return val;
     }
     else if(et.getEditMode() === TextEditMode.IP_ADDRESS)
     {
-        if (!text.match("\\d+\\.\\d+\\.\\d+\\.\\d+")) return "0.0.0.0";
-        return text;
+        if (!val.match("\\d+\\.\\d+\\.\\d+\\.\\d+")) throw new TcProtocolError("Not an IPV4 address");
+        return val;
     }
     else if(et.getEditMode() === TextEditMode.TIME_24H || et.getEditMode() === TextEditMode.TIME_24_HUNDREDS || et.getEditMode() === TextEditMode.TIME_12H)
     {
         // time is always sent back to the server in 24 hour format, it is always possible (but optional) to provide hundreds/sec.
-        if (!text.match("\\d+:\\d+:\\d+(.\\d*)*")) return "12:00:00";
-        return text;
+        if (!val.match("\\d+:\\d+:\\d+(.\\d*)*")) throw new TcProtocolError("Not in the correct time format");
+        return val;
     }
     else if (et.getEditMode() === TextEditMode.GREGORIAN_DATE)
     {
-        if (!text.match("\\d+/\\d+/\\d+")) return "01/01/2000";
-        return text;
+        if (!val.match("\\d+/\\d+/\\d+")) throw new TcProtocolError("Not a date");
+        return val;
     }
     return "";
 }

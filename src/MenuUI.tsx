@@ -1,7 +1,7 @@
 import React, {Component} from "react";
 import {FloatMenuItem, MenuItem, SubMenuItem} from "./api/MenuItem";
 import {MenuComponent, MenuController} from "./api/MenuController";
-import {formatForDisplay} from "./api/MenuItemFormatter";
+import {formatForDisplay, formatStringToWire} from "./api/MenuItemFormatter";
 
 export class BaseMenuUI extends Component<{ itemId: string, controller: MenuController }, { value: string }> implements MenuComponent {
     protected itemName: string = "";
@@ -32,7 +32,7 @@ export class BaseMenuUI extends Component<{ itemId: string, controller: MenuCont
             this.itemName = item.getItemName();
         }
         this.itemId = item.getMenuId();
-        this.readOnly = item.isReadOnly();
+        this.readOnly = item.isReadOnly() || (item instanceof FloatMenuItem);
     }
 
     bindAllControls(): void {
@@ -62,18 +62,16 @@ export class SubMenuUI extends BaseMenuUI {
         const listItems = this.renderableChildren.map((ch) => {
             switch (ch.messageType) {
                 case "Sub":
-                    return <SubMenuUI controller={this.props.controller} itemId={ch.getMenuId()}></SubMenuUI>;
+                    return <SubMenuUI controller={this.props.controller} itemId={ch.getMenuId()}/>;
                 case "Boolean":
                 case "Action":
-                    return <ActionableTextMenuItem itemId={ch.getMenuId()}
-                                                   controller={this.props.controller}></ActionableTextMenuItem>
+                    return <ActionableTextMenuItem itemId={ch.getMenuId()} controller={this.props.controller}/>
                 case "Analog":
                 case "Enum":
                 case "Scroll":
-                    return <UpDownEditorUI controller={this.props.controller} itemId={ch.getMenuId()}></UpDownEditorUI>
+                    return <UpDownEditorUI controller={this.props.controller} itemId={ch.getMenuId()}/>
                 default:
-                    return <TextBasedMenuUI controller={this.props.controller}
-                                            itemId={ch.getMenuId()}></TextBasedMenuUI>
+                    return <TextBasedMenuUI controller={this.props.controller} itemId={ch.getMenuId()}/>
             }
         });
 
@@ -117,6 +115,7 @@ export class UpDownEditorUI extends BaseMenuUI {
 
 export class TextBasedMenuUI extends BaseMenuUI {
     private editingMode:boolean = false;
+    private rollbackValue:string = "";
 
     bindAllControls() {
         this.startEditing = this.startEditing.bind(this);
@@ -128,17 +127,27 @@ export class TextBasedMenuUI extends BaseMenuUI {
     startEditing() {
         this.editingMode = true;
         this.itemHasUpdated();
+        this.rollbackValue = this.state.value;
     }
 
     cancelPressed() {
         this.editingMode = false;
+        this.setState({ value: this.rollbackValue });
         this.itemHasUpdated();
     }
 
     submitPressed() {
-        this.editingMode = false;
-        this.props.controller.sendAbsoluteUpdate(this.props.itemId, this.state.value);
-        this.itemHasUpdated();
+        try {
+            this.editingMode = false;
+            let item = this.props.controller.getTree().getMenuItemFor(this.props.itemId);
+            this.props.controller.sendAbsoluteUpdate(this.props.itemId, formatStringToWire(item, this.state.value));
+            this.itemHasUpdated();
+        }
+        catch(e) {
+            alert("Problem submitting value: " + e);
+            console.error("Problem during submit of value");
+            console.error(e);
+        }
     }
 
     textHasChanged(event: React.FormEvent<HTMLInputElement>) {
