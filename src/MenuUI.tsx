@@ -1,44 +1,41 @@
-import {Component} from "react";
-import {MenuItem, SubMenuItem, AnalogMenuItem, FloatMenuItem, BooleanMenuItem} from "./api/MenuItem";
-import {MenuController, MenuComponent} from "./api/MenuController";
-import {MenuCommandType} from "./api/TagValEnums";
+import React, {Component} from "react";
+import {FloatMenuItem, MenuItem, SubMenuItem} from "./api/MenuItem";
+import {MenuComponent, MenuController} from "./api/MenuController";
 import {formatForDisplay} from "./api/MenuItemFormatter";
 
-export class BaseMenuUI extends Component<{itemId:string, controller: MenuController}, object>  implements MenuComponent {
+export class BaseMenuUI extends Component<{ itemId: string, controller: MenuController }, { value: string }> implements MenuComponent {
     protected itemName: string = "";
     protected itemId: string = "";
     protected readOnly: boolean = false;
 
-    constructor(props: {itemId:string, controller: MenuController}) {
+    constructor(props: { itemId: string, controller: MenuController }) {
         super(props);
         this.bindAllControls();
     }
 
     componentDidMount() {
         this.updateItem();
-        this.setState(this.props);
     }
 
     private updateItem() {
         let item = this.props.controller.getTree().getMenuItemFor(this.props.itemId);
-        if(item) {
+        if (item) {
             this.props.controller.putMenuComponent(item.getMenuId(), this);
             this.internalUpdateItem(item);
         }
     }
 
     internalUpdateItem(item: MenuItem<any>) {
-        if(item.getMenuId() === "0") {
+        if (item.getMenuId() === "0") {
             this.itemName = this.props.controller.getMenuName();
-        }
-        else {
+        } else {
             this.itemName = item.getItemName();
         }
         this.itemId = item.getMenuId();
         this.readOnly = item.isReadOnly();
     }
 
-    bindAllControls():void {
+    bindAllControls(): void {
     }
 
     structureHasChanged() {
@@ -58,6 +55,7 @@ export class SubMenuUI extends BaseMenuUI {
     internalUpdateItem(item: SubMenuItem) {
         super.internalUpdateItem(item);
         this.renderableChildren = item.getChildren();
+        this.setState( { value: "" });
     }
 
     render() {
@@ -67,12 +65,15 @@ export class SubMenuUI extends BaseMenuUI {
                     return <SubMenuUI controller={this.props.controller} itemId={ch.getMenuId()}></SubMenuUI>;
                 case "Boolean":
                 case "Action":
-                    return <ActionableTextMenuItem itemId={ch.getMenuId()} controller={this.props.controller}></ActionableTextMenuItem>
+                    return <ActionableTextMenuItem itemId={ch.getMenuId()}
+                                                   controller={this.props.controller}></ActionableTextMenuItem>
                 case "Analog":
                 case "Enum":
+                case "Scroll":
                     return <UpDownEditorUI controller={this.props.controller} itemId={ch.getMenuId()}></UpDownEditorUI>
                 default:
-                    return <TextBasedMenuUI controller={this.props.controller} itemId={ch.getMenuId()}></TextBasedMenuUI>
+                    return <TextBasedMenuUI controller={this.props.controller}
+                                            itemId={ch.getMenuId()}></TextBasedMenuUI>
             }
         });
 
@@ -86,11 +87,10 @@ export class SubMenuUI extends BaseMenuUI {
 }
 
 export class UpDownEditorUI extends BaseMenuUI {
-    displayValue: string = "";
 
     internalUpdateItem(item: MenuItem<any>) {
         super.internalUpdateItem(item);
-        this.displayValue = formatForDisplay(item);
+        this.setState({value: formatForDisplay(item) });
     }
 
     bindAllControls() {
@@ -110,29 +110,68 @@ export class UpDownEditorUI extends BaseMenuUI {
         return <div className="upDownControl">
             <button className="leftBtn" disabled={this.readOnly} onClick={this.sendDecrease}>&lt;</button>
             <button className="rightBtn" disabled={this.readOnly} onClick={this.sendIncrease}>&gt;</button>
-            <span>{this.itemName}: {this.displayValue}</span>
+            <span>{this.itemName}: {this.state?.value}</span>
         </div>
     }
 }
 
 export class TextBasedMenuUI extends BaseMenuUI {
-    private displayValue: string = "";
+    private editingMode:boolean = false;
+
+    bindAllControls() {
+        this.startEditing = this.startEditing.bind(this);
+        this.cancelPressed = this.cancelPressed.bind(this);
+        this.submitPressed = this.submitPressed.bind(this);
+        this.textHasChanged = this.textHasChanged.bind(this);
+    }
+
+    startEditing() {
+        this.editingMode = true;
+        this.itemHasUpdated();
+    }
+
+    cancelPressed() {
+        this.editingMode = false;
+        this.itemHasUpdated();
+    }
+
+    submitPressed() {
+        this.editingMode = false;
+        this.props.controller.sendAbsoluteUpdate(this.props.itemId, this.state.value);
+        this.itemHasUpdated();
+    }
+
+    textHasChanged(event: React.FormEvent<HTMLInputElement>) {
+        this.setState({ value: event.currentTarget.value});
+    }
 
     internalUpdateItem(item: FloatMenuItem) {
         super.internalUpdateItem(item);
-        this.displayValue = formatForDisplay(item);
+        this.setState({value: formatForDisplay(item)} );
+
     }
 
     render() {
-        return <div className="upDownControl">
-            <button className="rightBtn">Edit</button>
-            <div>{this.itemName}: {this.displayValue}</div>
-        </div>
+        if (this.editingMode) {
+            return <div className="upDownControl">
+                <button className="rightBtn" onClick={this.submitPressed}>Submit</button>
+                <button className="rightBtn" onClick={this.cancelPressed}>Cancel</button>
+                <form >
+                    <label>{this.itemName}
+                    <input type="text" value={this.state?.value} onChange={this.textHasChanged}/>
+                    </label>
+                </form>
+            </div>
+        } else {
+            return <div className="upDownControl">
+                <button className="rightBtn" onClick={this.startEditing}>Edit</button>
+                <div>{this.itemName}: {this.state?.value}</div>
+            </div>
+        }
     }
 }
 
 export class ActionableTextMenuItem extends BaseMenuUI {
-    private displayValue: string = "";
 
     bindAllControls() {
         this.buttonPressed = this.buttonPressed.bind(this);
@@ -140,10 +179,8 @@ export class ActionableTextMenuItem extends BaseMenuUI {
 
     internalUpdateItem(item: MenuItem<any>) {
         super.internalUpdateItem(item);
-        if(item.messageType !== "Action") {
-            this.displayValue = ": " + formatForDisplay(item);
-        }
-        else this.displayValue = "";
+        const extraTxt = (item.messageType !== "Action") ? (": " + formatForDisplay(item)) : "";
+        this.setState({ value: extraTxt });
     }
 
     buttonPressed() {
@@ -151,6 +188,6 @@ export class ActionableTextMenuItem extends BaseMenuUI {
     }
 
     render() {
-        return <button className="actionableItem" onClick={this.buttonPressed}>{this.itemName}{this.displayValue}</button>
+        return <button className="actionableItem" onClick={this.buttonPressed}>{this.itemName}{this.state?.value}</button>
     }
 }

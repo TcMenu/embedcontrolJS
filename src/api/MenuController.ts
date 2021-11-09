@@ -1,7 +1,7 @@
 import {HeartbeatMode} from "./TagValEnums";
 import {TagValProtocolHandler, TagValProtocolParser, toPrintableMessage} from "./TagValProtocol";
 import {MenuTree} from "./MenuTree";
-import {AnalogMenuItem, BooleanMenuItem, EnumMenuItem, ScrollChoice} from "./MenuItem";
+import {AnalogMenuItem, BooleanMenuItem, EnumMenuItem, ScrollChoice, ScrollChoiceMenuItem} from "./MenuItem";
 
 export type APIMessageHandler = (protocol: number, rawMessage: string) => void;
 export type APIConnectionListener = (connected: boolean, text: string) => void;
@@ -155,24 +155,43 @@ export class MenuController {
         try {
             let item = this.menuTree.getMenuItemFor(itemId);
             if (!item) return;
-            let val = (item instanceof BooleanMenuItem) ? !item.getCurrentValue() : false;
-            let data = this.getProtocol().buildAbsoluteUpdate(item, val ? "1" : "0", false);
+            const val = (item instanceof BooleanMenuItem) ? !item.getCurrentValue() : false;
+            const  data = this.getProtocol().buildAbsoluteUpdate(item, val ? "1" : "0", false);
             this.sendMessage(data);
         }
         catch(e) {
-            //TODO
+            console.error(`Action update was not sent for ${itemId}`);
+            this.connector.closeConnection();
+        }
+    }
+
+    sendAbsoluteUpdate(itemId: string, amt: string) {
+        try {
+            const item = this.menuTree.getMenuItemFor(itemId);
+            const data = this.tagValProtocol.buildAbsoluteUpdate(item, amt, false);
+            this.sendMessage(data);
+        }
+        catch (e) {
+            console.error(`Update was not sent for ${itemId} change ${amt}`);
+            this.connector.closeConnection();
         }
     }
 
     sendDeltaUpdate(itemId: string, amt: number) {
         try {
             let item = this.menuTree.getMenuItemFor(itemId);
-            if (!(item instanceof AnalogMenuItem) && !(item instanceof EnumMenuItem)) return;
-            let data = this.getProtocol().buildDeltaUpdate(item, amt);
-            this.sendMessage(data);
+            if(item instanceof ScrollChoiceMenuItem) {
+                let sp = item.getCurrentValue();
+                sp.currentPos += amt;
+                this.tagValProtocol.buildAbsoluteUpdate(item, sp.asString(), false);
+            } else if ((item instanceof AnalogMenuItem) || (item instanceof EnumMenuItem)) {
+                let data = this.getProtocol().buildDeltaUpdate(item, amt);
+                this.sendMessage(data);
+            }
         }
         catch(e) {
-            // TODO
+            console.error(`Delta update was not sent for ${itemId} change ${amt}`);
+            this.connector.closeConnection();
         }
     }
 

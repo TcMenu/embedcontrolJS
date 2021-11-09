@@ -19,6 +19,7 @@ export class WebSocketConnector implements APIConnector {
     }
 
     start(): void {
+        if(this.state === CurrentSocketState.CONNECTING)  return;
         console.info(`Start connection to ${this.getName()}`);
         this.state = CurrentSocketState.CONNECTING;
         this.socket = new WebSocket(this.url);

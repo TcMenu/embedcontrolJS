@@ -75,6 +75,15 @@ header p {
 
 .upDownControl .rightBtn {
   float: right;
+  margin-left: 3px;
+}
+
+.upDownControl form {
+  text-align: left;
+}
+
+.upDownControl input {
+  margin-left: 10px;
 }
 
 button.actionableItem {

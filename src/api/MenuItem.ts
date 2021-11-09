@@ -290,6 +290,10 @@ export class ScrollChoice {
             return new ScrollChoice(0, "");
         }
     }
+
+    asString(): string {
+        return this.currentPos + "-" + this.currentValue;
+    }
 }
 
 export class ScrollChoiceMenuItem extends MenuItem<ScrollChoice> {
