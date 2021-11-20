@@ -1,4 +1,4 @@
-import {HeartbeatMode} from "./TagValEnums";
+import {AckStatus, HeartbeatMode} from "./TagValEnums";
 import {TagValProtocolHandler, TagValProtocolParser, toPrintableMessage} from "./TagValProtocol";
 import {MenuTree} from "./MenuTree";
 import {AnalogMenuItem, BooleanMenuItem, EnumMenuItem, ScrollChoice, ScrollChoiceMenuItem} from "./MenuItem";
@@ -21,10 +21,23 @@ export interface APIConnector {
 export interface MenuComponent {
     structureHasChanged(): void;
     itemHasUpdated(): void;
+    tick(timeNow: number): void;
+    ackReceived(correlationId: number, ackStatus: AckStatus): void;
+}
+
+export interface AppInfo {
+    name: string;
+    uuid: string;
+}
+
+let staticCorCount = 0;
+function makeCorrelation(): number {
+    return Math.floor((Math.random() * 0xfffff) + (++staticCorCount));
 }
 
 export class MenuController {
     private readonly menuTree: MenuTree;
+    private appInfo: AppInfo;
     private componentsById: {[id: string]: MenuComponent} = {};
     private lastHeartbeatRx: number;
     private lastHeartbeatTx: number;
@@ -37,7 +50,8 @@ export class MenuController {
     private tagValProtocol: TagValProtocolHandler;
     private controllerRunning: boolean = false;
 
-    public constructor(connector: APIConnector) {
+    public constructor(connector: APIConnector, appInfo: AppInfo) {
+        this.appInfo = appInfo;
         this.menuTree = new MenuTree((menuTree, id) => this.rebuildTree(false));
         this.tagValProtocol = new TagValProtocolHandler(this);
         this.lastHeartbeatRx = this.lastHeartbeatTx = Date.now();
@@ -51,7 +65,7 @@ export class MenuController {
         this.connector.registerConnectionListener((connected, why) => {
             if(connected) {
                 this.sendMessage(this.tagValProtocol.buildHeartbeat(HeartbeatMode.START));
-                this.sendMessage(this.tagValProtocol.buildJoin("webui", "07cd8bc6-734d-43da-84e7-6084990becfc"));
+                this.sendMessage(this.tagValProtocol.buildJoin(this.appInfo.name, this.appInfo.uuid));
                 this.menuTree.emptyTree();
                 this.rebuildTree(false);
             }
@@ -62,6 +76,11 @@ export class MenuController {
         })
 
         this.checkHeartbeats();
+
+        setInterval(() => {
+            const dt = Date.now();
+            Object.values(this.componentsById).forEach(comp => comp.tick(dt));
+        });
 
         this.connector.start();
     }
@@ -89,11 +108,14 @@ export class MenuController {
         this.bootInProgress = gotStart;
         if(!gotStart) this.rebuildTree(false);
 
-        console.log("boot" + mode);
+        console.debug("Boot event " + mode);
     }
 
-    public acknowledgement(correlationId: string) {
-        console.log("ack" + correlationId);
+    public acknowledgement(correlationId: string, ackStatus: AckStatus) {
+        console.debug("acknowledgement received " + correlationId + " - " + ackStatus);
+        if(correlationId && parseInt(correlationId, 16) > 0) {
+            Object.values(this.componentsById).forEach(item => item.ackReceived(parseInt(correlationId, 16), ackStatus));
+        }
     }
 
     public getTree() { return this.menuTree; }
@@ -151,13 +173,15 @@ export class MenuController {
         return this.tagValProtocol;
     }
 
-    sendActionableUpdate(itemId: string) {
+    sendActionableUpdate(itemId: string): number|undefined {
         try {
             let item = this.menuTree.getMenuItemFor(itemId);
-            if (!item) return;
+            if (!item) return undefined;
             const val = (item instanceof BooleanMenuItem) ? !item.getCurrentValue() : false;
-            const  data = this.getProtocol().buildAbsoluteUpdate(item, val ? "1" : "0", false);
+            const correlation = makeCorrelation();
+            const  data = this.getProtocol().buildAbsoluteUpdate(item, val ? "1" : "0", correlation.toString(16), false);
             this.sendMessage(data);
+            return correlation;
         }
         catch(e) {
             console.error(`Action update was not sent for ${itemId}`);
@@ -165,32 +189,37 @@ export class MenuController {
         }
     }
 
-    sendAbsoluteUpdate(itemId: string, amt: string) {
+    sendAbsoluteUpdate(itemId: string, amt: string): number|undefined {
         try {
             const item = this.menuTree.getMenuItemFor(itemId);
-            const data = this.tagValProtocol.buildAbsoluteUpdate(item, amt, false);
+            const correlation = makeCorrelation();
+            const data = this.tagValProtocol.buildAbsoluteUpdate(item, amt, correlation.toString(16), false);
             this.sendMessage(data);
+            return correlation;
         }
         catch (e) {
-            console.error(`Update was not sent for ${itemId} change ${amt}`);
+            console.error(`Update was not sent for ${itemId} change ${amt}`, e);
             this.connector.closeConnection();
         }
     }
 
-    sendDeltaUpdate(itemId: string, amt: number) {
+    sendDeltaUpdate(itemId: string, amt: number): number|undefined {
         try {
+            const correlation = makeCorrelation();
             let item = this.menuTree.getMenuItemFor(itemId);
             if(item instanceof ScrollChoiceMenuItem) {
                 let sp = item.getCurrentValue();
                 sp.currentPos += amt;
-                this.tagValProtocol.buildAbsoluteUpdate(item, sp.asString(), false);
+                this.tagValProtocol.buildAbsoluteUpdate(item, sp.asString(), correlation.toString(16), false);
+                return correlation;
             } else if ((item instanceof AnalogMenuItem) || (item instanceof EnumMenuItem)) {
-                let data = this.getProtocol().buildDeltaUpdate(item, amt);
+                let data = this.getProtocol().buildDeltaUpdate(item, amt, correlation.toString(16));
                 this.sendMessage(data);
+                return correlation;
             }
         }
         catch(e) {
-            console.error(`Delta update was not sent for ${itemId} change ${amt}`);
+            console.error(`Delta update was not sent for ${itemId} change ${amt}`, e);
             this.connector.closeConnection();
         }
     }
@@ -212,8 +241,11 @@ export class MenuController {
             case "Scroll":
                 item.setCurrentValue(ScrollChoice.fromString(value));
                 break;
+            case "List":
+                break;
             default:
                 item.setCurrentValue(value);
+                break;
         }
         this.componentsById[itemId]?.itemHasUpdated();
     }

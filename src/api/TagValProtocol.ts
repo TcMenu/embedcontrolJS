@@ -3,7 +3,7 @@ import {
     AnalogMenuItem,
     BooleanMenuItem, EditableTextMenuItem,
     EnumMenuItem,
-    FloatMenuItem,
+    FloatMenuItem, ListMenuItem,
     MenuItem, Rgb32MenuItem, ScrollChoice, ScrollChoiceMenuItem,
     SubMenuItem
 } from "./MenuItem";
@@ -125,7 +125,10 @@ export class TagValProtocolHandler {
                 this.controller.bootstrapEvent(parser.getValue(TVMenuFields.KEY_BOOT_TYPE_FIELD))
                 break;
             case MenuCommandType.ACKNOWLEDGEMENT:
-                this.controller.acknowledgement(parser.getValue(TVMenuFields.KEY_CORRELATION_FIELD));
+                this.controller.acknowledgement(
+                    parser.getValue(TVMenuFields.KEY_CORRELATION_FIELD),
+                    parser.getValueAsInt(TVMenuFields.KEY_ACK_STATUS)
+                );
                 break;
             case MenuCommandType.JOIN:
                 this.controller.joinReceived(
@@ -136,9 +139,7 @@ export class TagValProtocolHandler {
                 );
                 break;
             case MenuCommandType.CHANGE_INT_FIELD:
-                this.controller.itemHasUpdated(
-                    parser.getValue(TVMenuFields.KEY_ID_FIELD),
-                    parser.getValue(TVMenuFields.KEY_CURRENT_VAL));
+                this.itemChangeReceived();
                 break;
             case MenuCommandType.PAIRING_REQUEST:
                 this.controller.pairingRequest(parser.getValue(TVMenuFields.KEY_NAME_FIELD), parser.getValue(TVMenuFields.KEY_UUID_FIELD))
@@ -160,6 +161,9 @@ export class TagValProtocolHandler {
                 break;
             case MenuCommandType.ACTION_BOOT_ITEM:
                 this.processActionItem();
+                break;
+            case MenuCommandType.RUNTIME_LIST_BOOT:
+                this.processListItem();
                 break;
             case MenuCommandType.BOOT_RGB_COLOR:
                 this.processRgbItem();
@@ -193,18 +197,20 @@ export class TagValProtocolHandler {
             String.fromCharCode(TAG_END_OF_MSG);
     }
 
-    buildDeltaUpdate(item: AnalogMenuItem | EnumMenuItem, amount: number): string {
+    buildDeltaUpdate(item: AnalogMenuItem | EnumMenuItem, amount: number, correlation: string): string {
         return this.startMessage(MenuCommandType.CHANGE_INT_FIELD) +
             this.asTagVal(TVMenuFields.KEY_CHANGE_TYPE, "0") +
             this.asTagVal(TVMenuFields.KEY_ID_FIELD, item.getMenuId()) +
+            this.asTagVal(TVMenuFields.KEY_CORRELATION_FIELD, correlation) +
             this.asTagVal(TVMenuFields.KEY_CURRENT_VAL, amount.toString(10)) +
             String.fromCharCode(TAG_END_OF_MSG);
     }
 
-    buildAbsoluteUpdate(item: MenuItem<any>, newValue: string, isList: boolean): string {
+    buildAbsoluteUpdate(item: MenuItem<any>, newValue: string, correlation: string, isList: boolean): string {
         return this.startMessage(MenuCommandType.CHANGE_INT_FIELD) +
             this.asTagVal(TVMenuFields.KEY_CHANGE_TYPE, (isList) ? "2" : "1") +
             this.asTagVal(TVMenuFields.KEY_ID_FIELD, item.getMenuId()) +
+            this.asTagVal(TVMenuFields.KEY_CORRELATION_FIELD, correlation) +
             this.asTagVal(TVMenuFields.KEY_CURRENT_VAL, newValue) +
             String.fromCharCode(TAG_END_OF_MSG);
     }
@@ -285,10 +291,17 @@ export class TagValProtocolHandler {
 
     private processTextItem() {
         let parser = this.parsedKeyVal;
-        let item: EditableTextMenuItem = this.processMenuItem<EditableTextMenuItem>((parser, id) => new EditableTextMenuItem(id));
+        let item = this.processMenuItem<EditableTextMenuItem>((parser, id) => new EditableTextMenuItem(id));
         item.setTextLength(parser.getValueAsInt(TVMenuFields.KEY_MAX_LENGTH));
         item.setEditMode(parser.getValueAsInt(TVMenuFields.KEY_EDIT_TYPE));
         item.setCurrentValue(parser.getValue(TVMenuFields.KEY_CURRENT_VAL));
+        this.controller.getTree().menuItemUpdated(item.getMenuId());
+    }
+
+    private processListItem() {
+        const parser = this.parsedKeyVal;
+        const item = this.processMenuItem<ListMenuItem>((parser, id) => new ListMenuItem(id));
+        listItemHasUpdated(item, parser);
         this.controller.getTree().menuItemUpdated(item.getMenuId());
     }
 
@@ -306,6 +319,18 @@ export class TagValProtocolHandler {
         item.setCurrentValue(parseInt(parser.getValue(TVMenuFields.KEY_CURRENT_VAL)));
         this.controller.getTree().menuItemUpdated(item.getMenuId());
     }
+
+    private itemChangeReceived() {
+        const itemId = this.parsedKeyVal.getValue(TVMenuFields.KEY_ID_FIELD);
+        const menuItem = this.controller.getTree().getMenuItemFor(itemId);
+        if(menuItem instanceof ListMenuItem) {
+            listItemHasUpdated(menuItem, this.parsedKeyVal);
+            this.controller.itemHasUpdated(itemId, "");
+        }
+        else {
+            this.controller.itemHasUpdated(itemId, this.parsedKeyVal.getValue(TVMenuFields.KEY_CURRENT_VAL));
+        }
+    }
 }
 
 export function toPrintableMessage(rawMessage: string): string {
@@ -316,8 +341,20 @@ export function toPrintableMessage(rawMessage: string): string {
             cleanMsg += "<" + charNum + ">";
         }
         else {
-            cleanMsg += rawMessage;
+            cleanMsg += rawMessage.charAt(i);
         }
     }
     return cleanMsg;
+}
+
+function listItemHasUpdated(item: ListMenuItem, parser: TagValProtocolParser) {
+    item.setNumberOfItems(parser.getValueAsInt(TVMenuFields.KEY_NO_OF_CHOICES));
+    let list = Array<string>();
+    for(let i=0; i<item.getNumberOfItems(); i++) {
+        let character = String.fromCharCode(65 + i)
+        const name = parser.getValueWithDefault(TVMenuFields.KEY_PREPEND_NAMECHOICE + character, "");
+        const value = parser.getValueWithDefault(TVMenuFields.KEY_PREPEND_CHOICE + character, "");
+        list.push(name + " " + value);
+    }
+    item.setCurrentValue(list);
 }

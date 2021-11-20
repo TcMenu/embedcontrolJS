@@ -136,6 +136,24 @@ export class EnumMenuItem extends MenuItem<number> {
         this.markChanged();
     }
 }
+export class ListMenuItem extends MenuItem<Array<string>> {
+    messageType: string = 'List'
+    numberOfItems: number = 0;
+
+    public constructor(id: string) {
+        super([]);
+        this.setMenuId(id);
+    }
+
+    setNumberOfItems(items: number): void {
+        this.numberOfItems = items;
+        this.markChanged();
+    }
+
+    getNumberOfItems(): number {
+        return this.numberOfItems;
+    }
+}
 
 export enum BooleanNaming { TRUE_FALSE, ON_OFF, YES_NO}
 

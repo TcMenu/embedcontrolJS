@@ -5,7 +5,7 @@ import {
     EditableLargeNumberMenuItem,
     EditableTextMenuItem,
     EnumMenuItem,
-    FloatMenuItem,
+    FloatMenuItem, ListMenuItem,
     MenuItem,
     Rgb32MenuItem,
     ScrollChoiceMenuItem, TextEditMode
@@ -57,6 +57,7 @@ export function formatForDisplay(item: MenuItem<any>): string {
     else if(item instanceof EditableLargeNumberMenuItem) return item.getCurrentValue().toFixed(item.getDecimalPlaces());
     else if(item instanceof Rgb32MenuItem) return item.getCurrentValue();
     else if(item instanceof ScrollChoiceMenuItem) return item.getCurrentValue().currentValue;
+    else if(item instanceof ListMenuItem) return Object.values(item.getCurrentValue()).join(", ");
     else return "";
 }
 

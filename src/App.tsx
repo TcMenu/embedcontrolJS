@@ -1,9 +1,11 @@
 import React from 'react';
 import logo from './img/large_icon.png';
 import './App.css';
-import {MenuController} from "./api/MenuController";
+import {AppInfo, MenuController} from "./api/MenuController";
 import {SubMenuUI} from "./MenuUI"
 import {WebSocketConnector} from "./api/remote/WebSocketConnector";
+
+const applicationInfo: AppInfo = { name: "ESP32 Amp", uuid: "07cd8bc6-734d-43da-84e7-6084990becfc" }
 
 let globalController:MenuController;
 let globalSocket: WebSocketConnector
@@ -14,7 +16,7 @@ function initialiseApiIfNeeded(): void {
     if(!hasStartedYet) {
       hasStartedYet = true;
       globalSocket = new WebSocketConnector("ws:localhost:3333");
-      globalController = new MenuController(globalSocket);
+      globalController = new MenuController(globalSocket, applicationInfo);
       globalController.start();
     }
   }
@@ -31,7 +33,7 @@ function App() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          embedCONTROL WS
+          {applicationInfo.name} control
         </p>
       </header>
 

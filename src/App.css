@@ -8,7 +8,7 @@
 header {
   background-color: #8992a2;
   min-height: 60px;
-  font-size: calc(10px + 2vmin);
+  font-size: calc(14px + 2vmin);
   color: white;
   text-align: left;
 }
@@ -28,14 +28,39 @@ header p {
   color: #61dafb;
 }
 
+.subMenu {
+  background: rgba(230, 226, 248, 0.99);
+  border: black 2px solid;
+  border-radius: 6px;
+  margin: 5px 0 0 0;
+}
+
+.subMenu > .subShown {
+  display: block;
+}
+
+.subMenu > .subHidden {
+  display: none;
+}
+
 .subMenu > div {
-  padding: 5px 0 5px 10px;
+  padding: 5px 5px 5px 10px;
 }
 
 .subMenu h3 {
-  margin: 5px 0;
-  padding: 2px 0 2px 4px;
-  margin-top: 10px;
+  margin: 0;
+  padding: 4px 0 2px 4px;
+  background: #181869;
+  color: white;
+}
+
+.subMenu > h3 > button {
+  background: #41d3f5;
+  border-radius: 3px;
+  border: black 1px solid;
+  position: relative;
+  top: -2px;
+  margin-right: 4px;
 }
 
 
@@ -82,6 +107,15 @@ header p {
   text-align: left;
 }
 
+.upDownControl ul {
+  text-align: left;
+}
+
+.upDownControl p {
+  text-align: left;
+  margin: 4px 0;
+}
+
 .upDownControl input {
   margin-left: 10px;
 }
@@ -113,4 +147,17 @@ button.actionableItem:hover {
 .colorControl {
   border: #555 solid 1px;
   text-shadow: 2px 2px antiquewhite;
+}
+
+.itemHasUpdated {
+  background: rgb(81,98,184);
+}
+
+.pendingUpdate {
+  background: gray;
+}
+
+.errorDuringUpdate {
+  background: red;
+  color: white;
 }
