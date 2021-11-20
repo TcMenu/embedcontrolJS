@@ -161,3 +161,22 @@ button.actionableItem:hover {
   background: red;
   color: white;
 }
+
+.dialogShown {
+  background: #181869;
+  color: #61dafb;
+  border-radius: 6px;
+}
+
+.dialogShown button {
+  width: 50%;
+  border: solid 1px black;
+  border-radius: 4px;
+  font-size: 15px;
+  background: #41d3f5;
+  padding: 7px 0;
+}
+
+.dialogHidden {
+  display: none;
+}

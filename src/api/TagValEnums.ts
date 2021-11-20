@@ -67,6 +67,10 @@ export enum ChangeType {
     DELTA, ABSOLUTE, ABSOLUTE_LIST
 }
 
+export enum ButtonType {
+    OK, ACCEPT, CANCEL, CLOSE, NONE
+}
+
 export enum AckStatus {
     VALUE_OUT_OF_RANGE = -1, SUCCESS = 0, ID_NOT_FOUND = 1, INVALID_CREDENTIALS = 2, UNSPECIFIED_ERROR = 10000
 }

@@ -8,7 +8,7 @@ import {
     SubMenuItem
 } from "./MenuItem";
 import {MenuController} from "./MenuController";
-import {HeartbeatMode, MenuCommandType, TVMenuFields} from "./TagValEnums";
+import {ButtonType, HeartbeatMode, MenuCommandType, TVMenuFields} from "./TagValEnums";
 
 export const PROTOCOL_TAG_VAL = 0x01;
 export const TAG_START_OF_MSG = 0x01;
@@ -130,6 +130,15 @@ export class TagValProtocolHandler {
                     parser.getValueAsInt(TVMenuFields.KEY_ACK_STATUS)
                 );
                 break;
+            case MenuCommandType.DIALOG_UPDATE:
+                this.controller.dialogHasUpdated(
+                    parser.getValue(TVMenuFields.KEY_MODE_FIELD) === 'S',
+                    parser.getValueWithDefault(TVMenuFields.KEY_HEADER_FIELD, ""),
+                    parser.getValueWithDefault(TVMenuFields.KEY_BUFFER_FIELD, ""),
+                    parser.getValueAsIntWithDefault(TVMenuFields.KEY_BUTTON1_FIELD, 0),
+                    parser.getValueAsIntWithDefault(TVMenuFields.KEY_BUTTON2_FIELD, 0),
+                );
+                break;
             case MenuCommandType.JOIN:
                 this.controller.joinReceived(
                     parser.getValue(TVMenuFields.KEY_NAME_FIELD),
@@ -212,6 +221,16 @@ export class TagValProtocolHandler {
             this.asTagVal(TVMenuFields.KEY_ID_FIELD, item.getMenuId()) +
             this.asTagVal(TVMenuFields.KEY_CORRELATION_FIELD, correlation) +
             this.asTagVal(TVMenuFields.KEY_CURRENT_VAL, newValue) +
+            String.fromCharCode(TAG_END_OF_MSG);
+    }
+
+    buildDialogAction(button: ButtonType, correlation: string) {
+        return this.startMessage(MenuCommandType.DIALOG_UPDATE) +
+            this.asTagVal(TVMenuFields.KEY_MODE_FIELD, 'A') +
+            this.asTagVal(TVMenuFields.KEY_HEADER_FIELD, '-') +
+            this.asTagVal(TVMenuFields.KEY_BUFFER_FIELD, '-') +
+            this.asTagVal(TVMenuFields.KEY_BUTTON1_FIELD, button.toFixed(0)) +
+            this.asTagVal(TVMenuFields.KEY_BUTTON2_FIELD, button.toFixed(0)) +
             String.fromCharCode(TAG_END_OF_MSG);
     }
 

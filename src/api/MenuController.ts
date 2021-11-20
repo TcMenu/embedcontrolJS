@@ -1,10 +1,11 @@
-import {AckStatus, HeartbeatMode} from "./TagValEnums";
+import {AckStatus, ButtonType, HeartbeatMode} from "./TagValEnums";
 import {TagValProtocolHandler, TagValProtocolParser, toPrintableMessage} from "./TagValProtocol";
 import {MenuTree} from "./MenuTree";
 import {AnalogMenuItem, BooleanMenuItem, EnumMenuItem, ScrollChoice, ScrollChoiceMenuItem} from "./MenuItem";
 
 export type APIMessageHandler = (protocol: number, rawMessage: string) => void;
 export type APIConnectionListener = (connected: boolean, text: string) => void;
+export type DialogUpdateCallback = (shown: boolean, title: string, content: string, btn1: ButtonType, btn2: ButtonType) => void;
 
 export interface APIConnector {
     start(): void;
@@ -49,6 +50,7 @@ export class MenuController {
     private connector: APIConnector;
     private tagValProtocol: TagValProtocolHandler;
     private controllerRunning: boolean = false;
+    private dialogListener: DialogUpdateCallback|undefined;
 
     public constructor(connector: APIConnector, appInfo: AppInfo) {
         this.appInfo = appInfo;
@@ -129,6 +131,10 @@ export class MenuController {
         console.log("Pair: " + name + ", uuid: " + uuid);
     }
 
+    dialogHasUpdated(show: boolean, title: string, content: string, b1: ButtonType, b2: ButtonType) {
+        if(this.dialogListener) this.dialogListener(show, title, content, b1, b2);
+    }
+
     joinReceived(name: string, uuid: string, platform: string, version: number) {
         this.currentConnection = name;
         this.appName = name;
@@ -203,6 +209,19 @@ export class MenuController {
         }
     }
 
+    sendDialogAction(button: ButtonType): number|undefined {
+        try {
+            const correlation = makeCorrelation();
+            const data = this.tagValProtocol.buildDialogAction(button, correlation.toString(16));
+            this.sendMessage(data);
+            return correlation;
+        }
+        catch (e) {
+            console.error(`Dialog action not sent for ${button}`, e);
+            this.connector.closeConnection();
+        }
+    }
+
     sendDeltaUpdate(itemId: string, amt: number): number|undefined {
         try {
             const correlation = makeCorrelation();
@@ -264,6 +283,10 @@ export class MenuController {
 
     registerReceivedMessage(): void {
         this.lastHeartbeatRx = Date.now();
+    }
+
+    registerDialogListener(listener: DialogUpdateCallback) {
+        this.dialogListener = listener;
     }
 }
 
