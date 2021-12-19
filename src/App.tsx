@@ -1,47 +1,70 @@
 import React, {Component} from 'react';
 import logo from './img/large_icon.png';
 import './App.css';
-import {AppInfo, MenuController} from "./api/MenuController";
+import {MenuController} from "./api/MenuController";
 import {SubMenuUI} from "./MenuUI"
 import {WebSocketConnector} from "./api/remote/WebSocketConnector";
 import {ButtonType} from "./api/TagValEnums";
+import {GlobalAppSettings, GlobalSettingsPanel} from "./GlobalSettings";
 
-const applicationInfo: AppInfo = { name: "ESP32 Amp", uuid: "07cd8bc6-734d-43da-84e7-6084990becfc" }
+class App extends Component<any, {settingsActive: boolean}> {
+  private static globalSettings: GlobalAppSettings = new GlobalAppSettings();
+  private static globalController: MenuController;
+  private static globalSocket: WebSocketConnector
+  private static hasStartedYet = false;
 
-let globalController:MenuController;
-let globalSocket: WebSocketConnector
-let hasStartedYet = false;
+  constructor(props:any) {
+    super(props);
+    this.state = {settingsActive: false};
+    this.settingsButtonWasPressed = this.settingsButtonWasPressed.bind(this);
 
-function initialiseApiIfNeeded(): void {
-  try {
-    if(!hasStartedYet) {
-      hasStartedYet = true;
-      globalSocket = new WebSocketConnector("ws:localhost:3333");
-      globalController = new MenuController(globalSocket, applicationInfo);
-      globalController.start();
+    try {
+      if (!App.hasStartedYet) {
+        App.hasStartedYet = true;
+        let customUrl = App.globalSettings.getWebSocketExtension();
+        App.globalSocket = new WebSocketConnector(customUrl.length ? customUrl : "ws://" + window.location.host + "/ws");
+        App.globalController = new MenuController(App.globalSocket, App.globalSettings);
+        App.globalController.start();
+      }
+    } catch (err) {
+      if (err instanceof Error) console.log(err.message);
+      console.log(err);
     }
   }
-  catch(err) {
-    if(err instanceof Error) console.log(err.message);
-    console.log(err);
+
+  settingsButtonWasPressed() {
+    const st = !this.state.settingsActive;
+    this.setState({settingsActive: st});
   }
-}
 
-function App() {
-  initialiseApiIfNeeded();
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          {applicationInfo.name} control
-        </p>
-      </header>
+  render() {
+    if(this.state && this.state.settingsActive) {
+      return  <div className="App">
+        <header className="App-header">
+          <button onClick={this.settingsButtonWasPressed} className="settingsButton"><i className="fa fa-close"/> </button>
+          <img src={logo} className="App-logo" alt="logo"/>
+          <p>
+            App Settings
+          </p>
+        </header>
+        <GlobalSettingsPanel settings={App.globalSettings} controller={App.globalController}/>
+      </div>
 
-      <DialogItemUI controller={globalController}/>
-      <SubMenuUI itemId="0" controller={globalController}/>
-    </div>
-  );
+    } 
+    return (
+        <div className="App">
+          <header className="App-header">
+            <button onClick={this.settingsButtonWasPressed} className="settingsButton"><i className="fa fa-cog"/></button>
+            <img src={logo} className="App-logo" alt="logo"/>
+            <p>
+              {App.globalSettings.getAppName()}
+            </p>
+          </header>
+          <DialogItemUI controller={App.globalController}/>
+          <SubMenuUI itemId="0" controller={App.globalController}/>
+        </div>
+    );
+  }
 }
 
 interface DialogState {
@@ -83,7 +106,8 @@ class DialogItemUI extends Component<{ controller: MenuController}, DialogState>
 
   render() {
     const dialogClasses = this.state?.shown ? "dialogShown" : "dialogHidden"
-    if(!this.state) return <div/>
+    if (!this.state) return <div/>
+
     return <div className={dialogClasses}>
       <h1>{this.state.title}</h1>
       <h3>{this.state.content}</h3>
@@ -94,6 +118,5 @@ class DialogItemUI extends Component<{ controller: MenuController}, DialogState>
     </div>
   }
 }
-
 
 export default App;

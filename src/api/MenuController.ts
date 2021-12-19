@@ -27,8 +27,8 @@ export interface MenuComponent {
 }
 
 export interface AppInfo {
-    name: string;
-    uuid: string;
+    getAppName(): string;
+    getAppUuid(): string;
 }
 
 let staticCorCount = 0;
@@ -67,7 +67,7 @@ export class MenuController {
         this.connector.registerConnectionListener((connected, why) => {
             if(connected) {
                 this.sendMessage(this.tagValProtocol.buildHeartbeat(HeartbeatMode.START));
-                this.sendMessage(this.tagValProtocol.buildJoin(this.appInfo.name, this.appInfo.uuid));
+                this.sendMessage(this.tagValProtocol.buildJoin(this.appInfo.getAppName(), this.appInfo.getAppUuid()));
                 this.menuTree.emptyTree();
                 this.rebuildTree(false);
             }
