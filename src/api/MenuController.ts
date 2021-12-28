@@ -117,6 +117,8 @@ export class MenuController {
         console.debug("acknowledgement received " + correlationId + " - " + ackStatus);
         if(correlationId && parseInt(correlationId, 16) > 0) {
             Object.values(this.componentsById).forEach(item => item.ackReceived(parseInt(correlationId, 16), ackStatus));
+        } else {
+
         }
     }
 
