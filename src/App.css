@@ -224,3 +224,8 @@ button.actionableItem:hover {
   width: 98%;
   padding: 5px;
 }
+
+img.pairing-image {
+  float: left;
+  margin: 10px;
+}

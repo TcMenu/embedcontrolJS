@@ -1,8 +1,9 @@
 import React, {Component} from "react";
 import {FloatMenuItem, ListMenuItem, MenuItem, Rgb32MenuItem, SubMenuItem} from "./api/MenuItem";
-import {MenuComponent, MenuController} from "./api/MenuController";
+import {ControllerState, MenuComponent, MenuController} from "./api/MenuController";
 import {formatForDisplay, formatStringToWire} from "./api/MenuItemFormatter";
 import {AckStatus, isAckStatusError} from "./api/TagValEnums";
+import {PairingPanel} from "./PairingPanel";
 
 enum MenuUIState { READY, PENDING_UPDATE, RECENT_UPDATE, UPDATE_ERROR }
 const UPDATE_HIGHLIGHT_TIME = 1000;
@@ -154,6 +155,25 @@ export class SubMenuUI extends BaseMenuUI {
                 <div className={this.isExpanded ? "subShown" : "subHidden" }>{listItems}</div>
             </div>
         </div>
+    }
+}
+
+export class RootSubMenuUI extends SubMenuUI {
+    private pairingMode: boolean = false;
+
+    bindAllControls() {
+        this.props.controller.registerStateListener((state: ControllerState) => {
+            if (state === ControllerState.FAILED_AUTHENTICATION) {
+                this.pairingMode = true;
+                this.forceUpdate();
+            }
+        });
+    }
+
+    render() {
+        if (this.pairingMode) {
+            return <PairingPanel controller={this.props.controller}/>
+        } else return super.render();
     }
 }
 

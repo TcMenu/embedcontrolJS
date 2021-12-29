@@ -6,6 +6,7 @@ import {AnalogMenuItem, BooleanMenuItem, EnumMenuItem, ScrollChoice, ScrollChoic
 export type APIMessageHandler = (protocol: number, rawMessage: string) => void;
 export type APIConnectionListener = (connected: boolean, text: string) => void;
 export type DialogUpdateCallback = (shown: boolean, title: string, content: string, btn1: ButtonType, btn2: ButtonType) => void;
+export type PairingCallback = (update: string) => void;
 
 export interface APIConnector {
     start(): void;
@@ -36,6 +37,18 @@ function makeCorrelation(): number {
     return Math.floor((Math.random() * 0xfffff) + (++staticCorCount));
 }
 
+export enum ControllerState {
+    STOPPED,
+    NOT_CONNECTED,
+    CONNECTED,
+    BOOTSTRAP,
+    READY,
+    FAILED_AUTHENTICATION,
+    PAIRED_OK
+}
+export type MenuStateListener = (update: ControllerState) => void;
+
+
 export class MenuController {
     private readonly menuTree: MenuTree;
     private appInfo: AppInfo;
@@ -46,11 +59,12 @@ export class MenuController {
     private currentConnection: string = "";
     private appName: string = "";
     private appVersion: number = 0.0;
-    private bootInProgress: boolean = false;
     private connector: APIConnector;
     private tagValProtocol: TagValProtocolHandler;
-    private controllerRunning: boolean = false;
     private dialogListener: DialogUpdateCallback|undefined;
+    private currentState: ControllerState = ControllerState.STOPPED;
+    private stateListener: MenuStateListener|undefined = undefined;
+    private pairingMode: boolean = false;
 
     public constructor(connector: APIConnector, appInfo: AppInfo) {
         this.appInfo = appInfo;
@@ -60,9 +74,28 @@ export class MenuController {
         this.connector = connector;
     }
 
+    private setCurrentState(state: ControllerState) {
+        this.currentState = state;
+        if(this.stateListener) this.stateListener(state);
+    }
+
+    public getCurrentState(): ControllerState {
+        return this.currentState;
+    }
+
+    public registerStateListener(l: MenuStateListener): void {
+        this.stateListener = l;
+        l(this.currentState);
+    }
+
+    public isRunning(): boolean {
+        return this.currentState !== ControllerState.STOPPED && this.currentState !== ControllerState.FAILED_AUTHENTICATION;
+    }
+
     public start() {
+        if(this.isRunning()) return;
         this.connector.registerMessageHandler((proto, msg) => this.tagValProtocol.tagValToMenuItem(msg));
-        this.controllerRunning = true;
+        this.setCurrentState(ControllerState.NOT_CONNECTED);
 
         this.connector.registerConnectionListener((connected, why) => {
             if(connected) {
@@ -79,12 +112,45 @@ export class MenuController {
 
         this.checkHeartbeats();
 
-        setInterval(() => {
-            const dt = Date.now();
-            Object.values(this.componentsById).forEach(comp => comp.tick(dt));
-        });
+        this.tickAllElements();
 
         this.connector.start();
+    }
+
+    public async attemptPairing(cb: PairingCallback): Promise<boolean> {
+        this.pairingMode = true;
+        this.start();
+        const startTime = Date.now();
+
+        try {
+            while ((Date.now() - startTime) < 20000) {
+                if (this.currentState === ControllerState.FAILED_AUTHENTICATION) return false;
+                if(this.currentState === ControllerState.PAIRED_OK) return true;
+                cb("Connection: " + this.currentState);
+                await delay(500);
+            }
+        }
+        finally {
+            this.stop();
+            this.pairingMode = false;
+        }
+        return false;
+    }
+
+    public stop() {
+        this.pairingMode = false;
+        this.setCurrentState(ControllerState.STOPPED);
+        this.connector?.closeConnection();
+        this.menuTree.emptyTree();
+        this.componentsById = {};
+    }
+
+    private tickAllElements() {
+        if(this.isRunning()) {
+            const dt = Date.now();
+            Object.values(this.componentsById).forEach(comp => comp.tick(dt));
+            setTimeout(this.tickAllElements, 100);
+        }
     }
 
     private checkHeartbeats() {
@@ -102,12 +168,12 @@ export class MenuController {
             this.connector.start();
         }
 
-        if(this.controllerRunning) setTimeout( () => this.checkHeartbeats(), 500);
+        if(this.isRunning()) setTimeout( () => this.checkHeartbeats(), 500);
     }
 
     public bootstrapEvent(mode: string) {
         let gotStart = (mode === "START");
-        this.bootInProgress = gotStart;
+        this.setCurrentState(gotStart ? ControllerState.BOOTSTRAP : ControllerState.READY);
         if(!gotStart) this.rebuildTree(false);
 
         console.debug("Boot event " + mode);
@@ -117,8 +183,14 @@ export class MenuController {
         console.debug("acknowledgement received " + correlationId + " - " + ackStatus);
         if(correlationId && parseInt(correlationId, 16) > 0) {
             Object.values(this.componentsById).forEach(item => item.ackReceived(parseInt(correlationId, 16), ackStatus));
-        } else {
-
+        }
+        else if(this.currentState === ControllerState.CONNECTED) {
+            if(ackStatus !== AckStatus.SUCCESS) {
+                this.setCurrentState(ControllerState.FAILED_AUTHENTICATION);
+            }
+            else if(this.pairingMode) {
+                this.setCurrentState(ControllerState.PAIRED_OK);
+            }
         }
     }
 
@@ -168,7 +240,7 @@ export class MenuController {
             if(rootComponent) this.componentsById[rootId] = rootComponent;
         }
 
-        if(!this.bootInProgress) {
+        if(this.currentState === ControllerState.READY) {
             Object.values(this.componentsById).forEach(comp => comp.structureHasChanged());
         }
     }
@@ -292,5 +364,6 @@ export class MenuController {
     }
 }
 
-
-
+function delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
+}

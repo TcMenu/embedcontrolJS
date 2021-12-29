@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import logo from './img/large_icon.png';
 import './App.css';
 import {MenuController} from "./api/MenuController";
-import {SubMenuUI} from "./MenuUI"
+import {RootSubMenuUI, SubMenuUI} from "./MenuUI"
 import {WebSocketConnector} from "./api/remote/WebSocketConnector";
 import {ButtonType} from "./api/TagValEnums";
 import {GlobalAppSettings, GlobalSettingsPanel} from "./GlobalSettings";
@@ -61,7 +61,7 @@ class App extends Component<any, {settingsActive: boolean}> {
             </p>
           </header>
           <DialogItemUI controller={App.globalController}/>
-          <SubMenuUI itemId="0" controller={App.globalController}/>
+          <RootSubMenuUI itemId="0" controller={App.globalController}/>
         </div>
     );
   }
