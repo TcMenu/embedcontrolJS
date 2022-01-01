@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import logo from './img/large_icon.png';
 import './App.css';
 import {MenuController} from "./api/MenuController";
-import {RootSubMenuUI, SubMenuUI} from "./MenuUI"
+import {RootSubMenuUI} from "./MenuUI"
 import {WebSocketConnector} from "./api/remote/WebSocketConnector";
 import {ButtonType} from "./api/TagValEnums";
 import {GlobalAppSettings, GlobalSettingsPanel} from "./GlobalSettings";

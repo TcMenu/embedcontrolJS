@@ -1,5 +1,4 @@
 import {MenuItem, SubMenuItem} from "./MenuItem";
-import {TagValProtocolParser} from "./TagValProtocol";
 
 type TreeStructureChangedFn = (menuTree: MenuTree, id: string) => void;
 

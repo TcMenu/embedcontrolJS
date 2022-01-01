@@ -1,6 +1,6 @@
 import {Component} from "react";
 import pairingImg from './img/pairingExample.jpg';
-import {ControllerState, MenuController} from "./api/MenuController";
+import {MenuController} from "./api/MenuController";
 
 enum PairingMode { NOT_STARTED, STARTED, DONE}
 type PairingPanelProps = { controller: MenuController };
@@ -10,7 +10,7 @@ export class PairingPanel extends Component<PairingPanelProps, PairingPanelState
 
     constructor(props: Readonly<PairingPanelProps> | PairingPanelProps) {
         super(props);
-        this.state = {status: "Not started", buttonText: "Start pairing", pairingMode: PairingMode.NOT_STARTED};
+        this.state = {status: "Not started", buttonText: "Start pairing with device", pairingMode: PairingMode.NOT_STARTED};
         this.pairingButtonClicked = this.pairingButtonClicked.bind(this);
     }
 
@@ -30,21 +30,22 @@ export class PairingPanel extends Component<PairingPanelProps, PairingPanelState
             this.props.controller.stop();
         }
         else {
-            // dismiss this window..
+            window.location.reload();
         }
     }
 
     render() {
         return <div>
+            <h2>Device requires that you pair with it</h2>
             <img src={pairingImg} className="pairing-image" alt="Example pairing screen on device"/>
-            <p>The connection to the device was not allowed, you need to pair with the device first. To this
+            <p>The connection to the device was not allowed, you need to pair with the device first. To do this
             make sure that the device close by before proceeding, as you will need to 'Accept' the pairing on
             the device itself.</p>
             <p>Over to the left is how the pairing screen looks, you simply choose the accept option to allow this
             device to connect. Ensure you only ever press accept when you are pairing yourself.</p>
             <p>Current Status: <span>{this.state.status}</span></p>
             <div>
-                <button onClick={this.pairingButtonClicked}>{this.state.buttonText}</button>
+                <button className="settingsButton" onClick={this.pairingButtonClicked}>{this.state.buttonText}</button>
             </div>
         </div>;
     }

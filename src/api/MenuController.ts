@@ -99,12 +99,18 @@ export class MenuController {
 
         this.connector.registerConnectionListener((connected, why) => {
             if(connected) {
+                this.setCurrentState(ControllerState.CONNECTED);
                 this.sendMessage(this.tagValProtocol.buildHeartbeat(HeartbeatMode.START));
-                this.sendMessage(this.tagValProtocol.buildJoin(this.appInfo.getAppName(), this.appInfo.getAppUuid()));
+                if(this.pairingMode) {
+                    this.sendMessage(this.tagValProtocol.buildPairing(this.appInfo.getAppName(), this.appInfo.getAppUuid()));
+                } else {
+                    this.sendMessage(this.tagValProtocol.buildJoin(this.appInfo.getAppName(), this.appInfo.getAppUuid()));
+                }
                 this.menuTree.emptyTree();
                 this.rebuildTree(false);
             }
             else {
+                this.setCurrentState(ControllerState.NOT_CONNECTED);
                 this.menuTree.emptyTree();
                 this.rebuildTree(true);
             }
@@ -126,7 +132,7 @@ export class MenuController {
             while ((Date.now() - startTime) < 20000) {
                 if (this.currentState === ControllerState.FAILED_AUTHENTICATION) return false;
                 if(this.currentState === ControllerState.PAIRED_OK) return true;
-                cb("Connection: " + this.currentState);
+                cb(ControllerState[this.currentState]);
                 await delay(500);
             }
         }
@@ -146,10 +152,10 @@ export class MenuController {
     }
 
     private tickAllElements() {
-        if(this.isRunning()) {
+        if(this.connector.isConnected()) {
             const dt = Date.now();
             Object.values(this.componentsById).forEach(comp => comp.tick(dt));
-            setTimeout(this.tickAllElements, 100);
+            setTimeout(() => this.tickAllElements(), 100);
         }
     }
 

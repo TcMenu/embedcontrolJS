@@ -42,8 +42,8 @@ export class WebSocketConnector implements APIConnector {
 
         this.socket.onmessage = ev => {
             this.currentData += ev.data;
-            let possibleMessage = this.getPossibleMessage(PROTOCOL_TAG_VAL); // check if there's a tag val message
-            if(possibleMessage && this.messageHandler) {
+            let possibleMessage = this.getPossibleMessage(PROTOCOL_TAG_VAL);
+            while(possibleMessage && this.messageHandler) {
                 try {
                     console.debug(`Message received on ${this.getName()} was ${possibleMessage}`);
                     this.messageHandler(PROTOCOL_TAG_VAL, possibleMessage);
@@ -52,6 +52,7 @@ export class WebSocketConnector implements APIConnector {
                     console.log("Unexpected error in message processing");
                     console.log(e);
                 }
+                possibleMessage = this.getPossibleMessage(PROTOCOL_TAG_VAL); // check if there's a tag val message
             }
         };
     }

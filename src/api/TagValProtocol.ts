@@ -23,7 +23,7 @@ export class TcProtocolError extends Error {
     constructor(public message: string) {
         super(message);
         this.name = "TcProtocolError";
-        ({stack: this.stack} = (<any>new Error()));
+        ({stack: this.stack} = (new Error() as any));
     }
 
 }
@@ -206,6 +206,14 @@ export class TagValProtocolHandler {
             String.fromCharCode(TAG_END_OF_MSG);
     }
 
+    buildPairing(appName: string, appUuid: string) {
+        return this.startMessage(MenuCommandType.PAIRING_REQUEST) +
+            this.asTagVal(TVMenuFields.KEY_NAME_FIELD, appName) +
+            this.asTagVal(TVMenuFields.KEY_UUID_FIELD, appUuid) +
+            String.fromCharCode(TAG_END_OF_MSG);
+
+    }
+
     buildDeltaUpdate(item: AnalogMenuItem | EnumMenuItem, amount: number, correlation: string): string {
         return this.startMessage(MenuCommandType.CHANGE_INT_FIELD) +
             this.asTagVal(TVMenuFields.KEY_CHANGE_TYPE, "0") +
@@ -313,7 +321,7 @@ export class TagValProtocolHandler {
         let item = this.processMenuItem<EditableTextMenuItem>((parser, id) => new EditableTextMenuItem(id));
         item.setTextLength(parser.getValueAsInt(TVMenuFields.KEY_MAX_LENGTH));
         item.setEditMode(parser.getValueAsInt(TVMenuFields.KEY_EDIT_TYPE));
-        item.setCurrentValue(parser.getValue(TVMenuFields.KEY_CURRENT_VAL));
+        item.setCurrentValue(parser.getValueWithDefault(TVMenuFields.KEY_CURRENT_VAL, ""));
         this.controller.getTree().menuItemUpdated(item.getMenuId());
     }
 
