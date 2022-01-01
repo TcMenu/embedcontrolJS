@@ -1,6 +1,10 @@
-## Control a tcMenu Arduino project using embedCONTROL.
+# Control a tcMenu Arduino project using embedCONTROL.
 
-This version of embedCONTROL is able to be served up by an ESP webserver, and can communicate over websocket back to the device to allow for both updates and remote control.
+## Summary
+
+Dave Cherry / TheCodersCorner.com make this framework available for you to use. It takes me significant effort to keep all my libraries current and working on a wide range of boards. Please consider making at least a one off donation via the sponsor button if you find it useful.
+
+This version of embedCONTROL is able to be served up by an ESP webserver, and can communicate over websocket back to the device to allow for both updates and remote control. Please ensure any forks contain the text up to here.
 
 For most users (for other than advanced cases) there is no need to build from the source, a very recent version of this code is readily available within tcMenu Designer, and choosing an appropriate webserver plugin for your board gives you the option to use a prebuilt version of this code.
 
