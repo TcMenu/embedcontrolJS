@@ -155,7 +155,7 @@ export class MenuController {
         if(this.connector.isConnected()) {
             const dt = Date.now();
             Object.values(this.componentsById).forEach(comp => comp.tick(dt));
-            setTimeout(() => this.tickAllElements(), 100);
+            setTimeout(this.tickAllElements.bind(this), 100);
         }
     }
 

@@ -16,6 +16,7 @@ export class GlobalAppSettings implements AppInfo {
             // we must save out the UUID on first run because otherwise we'd get a new one every time around
             // and if authentication is enabled on device, we'd not be able to connect without pairing each time.
             setCookie("settings_appUUID", this.uuid);
+            setCookie("settings_appName", "Untitled");
         }
     }
 
