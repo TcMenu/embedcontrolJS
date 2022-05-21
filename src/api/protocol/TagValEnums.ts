@@ -37,38 +37,50 @@ export enum TVMenuFields {
     KEY_BUTTON2_FIELD = "B2"
 }
 
-export enum MenuCommandType {
-    JOIN = "NJ",
-    PAIRING_REQUEST = "PR",
-    HEARTBEAT = "HB",
-    BOOTSTRAP = "BS",
-    ANALOG_BOOT_ITEM = "BA",
-    ACTION_BOOT_ITEM = "BC",
-    SUBMENU_BOOT_ITEM = "BM",
-    ENUM_BOOT_ITEM = "BE",
-    BOOLEAN_BOOT_ITEM = "BB",
-    TEXT_BOOT_ITEM = "BT",
-    RUNTIME_LIST_BOOT = "BL",
-    BOOT_SCROLL_CHOICE = "BZ",
-    BOOT_RGB_COLOR = "BK",
-    LARGE_NUM_BOOT_ITEM = "BN",
-    FLOAT_BOOT_ITEM = "BF",
-    REMOTE_BOOT_ITEM = "BR",
-    ACKNOWLEDGEMENT = "AK",
-    CHANGE_INT_FIELD = "VC",
-    DIALOG_UPDATE = "DM"
+export class MenuCommandType {
+    public static JOIN = "NJ";
+    public static PAIRING_REQUEST = "PR";
+    public static HEARTBEAT = "HB";
+    public static BOOTSTRAP = "BS";
+    public static ANALOG_BOOT_ITEM = "BA";
+    public static ACTION_BOOT_ITEM = "BC";
+    public static SUBMENU_BOOT_ITEM = "BM";
+    public static ENUM_BOOT_ITEM = "BE";
+    public static BOOLEAN_BOOT_ITEM = "BB";
+    public static TEXT_BOOT_ITEM = "BT";
+    public static RUNTIME_LIST_BOOT = "BL";
+    public static BOOT_SCROLL_CHOICE = "BZ";
+    public static BOOT_RGB_COLOR = "BK";
+    public static LARGE_NUM_BOOT_ITEM = "BN";
+    public static FLOAT_BOOT_ITEM = "BF";
+    public static REMOTE_BOOT_ITEM = "BR";
+    public static ACKNOWLEDGEMENT = "AK";
+    public static CHANGE_INT_FIELD = "VC";
+    public static DIALOG_UPDATE = "DM"
 }
 
 export enum HeartbeatMode {
     NORMAL, START, END
 }
 
+export enum BootstrapMode {
+    START, STOP
+}
+
 export enum ChangeType {
-    DELTA, ABSOLUTE, ABSOLUTE_LIST
+    DELTA = 0, ABSOLUTE = 1, ABSOLUTE_LIST = 2, LIST_SELECTION = 3
 }
 
 export enum ButtonType {
     OK, ACCEPT, CANCEL, CLOSE, NONE
+}
+
+export enum DialogMode {
+    SHOW= 'S', HIDE = 'H', ACTION = 'A'
+}
+
+export enum ApiPlatform {
+    ARDUINO, ARDUINO_32, JAVA_API,DNET_API,JS_API
 }
 
 export enum AckStatus {

@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import {FloatMenuItem, ListMenuItem, MenuItem, Rgb32MenuItem, SubMenuItem} from "./api/MenuItem";
 import {ControllerState, MenuComponent, MenuController} from "./api/MenuController";
 import {formatForDisplay, formatStringToWire} from "./api/MenuItemFormatter";
-import {AckStatus, isAckStatusError} from "./api/TagValEnums";
+import {AckStatus, isAckStatusError} from "./api/protocol/TagValEnums";
 import {PairingPanel} from "./PairingPanel";
 
 enum MenuUIState { READY, PENDING_UPDATE, RECENT_UPDATE, UPDATE_ERROR }
@@ -165,8 +165,8 @@ export class RootSubMenuUI extends SubMenuUI {
         this.props.controller.registerStateListener((state: ControllerState) => {
             if (state === ControllerState.FAILED_AUTHENTICATION) {
                 this.pairingMode = true;
-                this.forceUpdate();
             }
+            this.itemHasUpdated();
         });
     }
 

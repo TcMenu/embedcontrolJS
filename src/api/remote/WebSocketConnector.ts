@@ -1,5 +1,5 @@
 import {APIConnectionListener, APIConnector, APIMessageHandler} from "../MenuController";
-import {PROTOCOL_TAG_VAL, TAG_END_OF_MSG, TAG_START_OF_MSG} from "../TagValProtocol";
+import {PROTOCOL_TAG_VAL, TAG_END_OF_MSG, TAG_START_OF_MSG} from "../protocol/TagValProtocol";
 
 enum CurrentSocketState {
     DISCONNECTED, CONNECTING, CONNECTED, STOPPED

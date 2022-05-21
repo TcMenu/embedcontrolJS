@@ -91,6 +91,7 @@ export class GlobalSettingsPanel extends Component<{settings: GlobalAppSettings,
                 <label htmlFor="websocketAddressField">Web Socket</label>
                 <span><input id="websocketAddressField" name="webSockField" onChange={this.webSocketHasChanged} value={this.props.settings.getWebSocketExtension()}/></span>
             </form>
+            <p>{process.env.REACT_APP_NAME} Version {process.env.REACT_APP_VERSION}</p>
         </div>;
     }
 }

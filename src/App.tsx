@@ -4,7 +4,7 @@ import './App.css';
 import {MenuController} from "./api/MenuController";
 import {RootSubMenuUI} from "./MenuUI"
 import {WebSocketConnector} from "./api/remote/WebSocketConnector";
-import {ButtonType} from "./api/TagValEnums";
+import {ButtonType} from "./api/protocol/TagValEnums";
 import {GlobalAppSettings, GlobalSettingsPanel} from "./GlobalSettings";
 
 class App extends Component<any, {settingsActive: boolean}> {

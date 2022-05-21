@@ -4,12 +4,12 @@ type TreeStructureChangedFn = (menuTree: MenuTree, id: string) => void;
 
 export class MenuTree {
     private allItemMap: { [id: string]: MenuItem<any>; } = {};
-    private rootElement = new SubMenuItem("ROOT", "0");
-    private treeStructureChnanged: TreeStructureChangedFn;
+    private readonly rootElement = new SubMenuItem("ROOT", "0");
+    private treeStructureChanged: TreeStructureChangedFn;
 
     constructor(treeStructChangeFn: TreeStructureChangedFn) {
         this.allItemMap["0"] = this.rootElement;
-        this.treeStructureChnanged = treeStructChangeFn;
+        this.treeStructureChanged = treeStructChangeFn;
     }
 
     public getRoot() {
@@ -26,20 +26,16 @@ export class MenuTree {
             if (!sub) sub = this.rootElement;
             sub.addChildItem(menuItem);
             this.allItemMap[menuItem.getMenuId()] = menuItem;
-            this.treeStructureChnanged(this, menuItem.getMenuId());
+            this.treeStructureChanged(this, menuItem.getMenuId());
             return true;
         }
         else return false; // already existed so not re-added.
-    }
-
-    public menuItemUpdated(key: string) {
-
     }
 
     emptyTree() {
         this.allItemMap = {};
         this.rootElement.clearAll();
         this.allItemMap["0"] = this.rootElement;
-        this.treeStructureChnanged(this, this.rootElement.getMenuId());
+        this.treeStructureChanged(this, this.rootElement.getMenuId());
     }
 }

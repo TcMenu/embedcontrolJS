@@ -10,7 +10,7 @@ import {
     Rgb32MenuItem,
     ScrollChoiceMenuItem, TextEditMode
 } from "./MenuItem";
-import {TcProtocolError} from "./TagValProtocol";
+import {TcProtocolError} from "./protocol/TagValProtocol";
 
 function isTrue(currentValue: string): boolean {
     return currentValue.charAt(0) === "Y" || currentValue.charAt(0) === "1" || currentValue.charAt(0) === "T";
