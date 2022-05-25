@@ -3,19 +3,25 @@ import { v4 as uuidv4 } from 'uuid';
 import React, {Component, FormEvent} from "react";
 
 export class GlobalAppSettings implements AppInfo {
+    private readonly SETTINGS_APP_NAME = "settings_appName";
+    private readonly SETTINGS_APP_UUID = "settings_appUUID";
+    private readonly SETTINGS_WEBSOCKET_EXT = "settings_webSocketExt";
+
     private uuid: string = uuidv4();
     private appName: string = "Untitled";
     private webSocketExtension: string = "";
 
     constructor() {
-        if(doesCookieExist("settings_appName") && doesCookieExist("settings_appUUID")) {
-            this.appName = getCookieOrDefault("settings_appName") ?? "Undefined";
-            this.uuid = getCookieOrDefault("settings_appUUID") ?? "Undefined";
-            this.webSocketExtension = getCookieOrDefault("settings_webSocketExt") ?? "";
+        if(doesCookieExist(this.SETTINGS_APP_NAME) && doesCookieExist(this.SETTINGS_APP_UUID)) {
+            this.appName = getCookieOrDefault(this.SETTINGS_APP_NAME) ?? "Undefined";
+            this.uuid = getCookieOrDefault(this.SETTINGS_APP_UUID) ?? "Undefined";
+            this.webSocketExtension = getCookieOrDefault(this.SETTINGS_WEBSOCKET_EXT) ?? "";
         } else {
             // we must save out the UUID on first run because otherwise we'd get a new one every time around
             // and if authentication is enabled on device, we'd not be able to connect without pairing each time.
-            setCookie("settings_appUUID", this.uuid);
+            setCookie(this.SETTINGS_APP_UUID, this.uuid);
+            setCookie(this.SETTINGS_APP_NAME, this.appName);
+            setCookie(this.SETTINGS_WEBSOCKET_EXT, this.webSocketExtension);
             setCookie("settings_appName", "Untitled");
         }
     }
@@ -34,17 +40,17 @@ export class GlobalAppSettings implements AppInfo {
 
     setAppName(appName: string): void {
         this.appName = appName;
-        setCookie("settings_appName", appName);
+        setCookie(this.SETTINGS_APP_NAME, appName);
     }
 
     setAppUuid(appUuid: string): void {
         this.uuid = appUuid;
-        setCookie("settings_appUUID", appUuid);
+        setCookie(this.SETTINGS_APP_UUID, appUuid);
     }
 
     setWebSocketExtension(wsExtension: string) {
         this.webSocketExtension = wsExtension;
-        setCookie("settings_webSocketExt", wsExtension);
+        setCookie(this.SETTINGS_WEBSOCKET_EXT, wsExtension);
     }
 }
 
@@ -111,6 +117,6 @@ export function getCookieOrDefault(name: string, def: string|undefined = undefin
         .map(cookie => { return decodeURIComponent(cookie.substring(nameLenPlus)); })[0] || def;
 }
 
-export function doesCookieExist(name: string) {
+export function doesCookieExist(name: string): boolean {
     return getCookieOrDefault(name) !== undefined;
 }
