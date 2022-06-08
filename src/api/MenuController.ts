@@ -69,6 +69,12 @@ export type MenuStateListener = (update: ControllerState) => void;
 
 export type CustomMessageHandler = (cmd: MenuCommand) => void;
 
+function removeAnyEditArtifacts(value: string | string[]) {
+    const strVal = value.toString();
+    const rex = /[[\]]/;
+    return strVal.replaceAll(rex, strVal);
+}
+
 export class MenuController {
     private readonly menuTree: MenuTree;
     private readonly protocolHandler: TcProtocolHandler;
@@ -256,6 +262,21 @@ export class MenuController {
         }
     }
 
+    sendListResponseUpdate(itemId: string, row: number, doubleClick: boolean): number|undefined {
+        try {
+            let correlation = makeCorrelation();
+            const listResponse = row.toString() + ":" + (doubleClick ? "1" : "0");
+            this.sendMessage(this.protocolHandler.convertCommandToWire(
+                new ItemChangeCommand(itemId, ChangeType.LIST_SELECTION, listResponse, correlation.toString(16))
+            ));
+            return correlation;
+        }
+        catch (e) {
+            console.error("List response was not sent for " + itemId + " row " + row);
+            this.connector.closeConnection();
+        }
+    }
+
     sendAbsoluteUpdate(itemId: string, amt: string): number|undefined {
         try {
             const item = this.menuTree.getMenuItemFor(itemId);
@@ -412,7 +433,7 @@ export class MenuController {
                 item.setCurrentValue(parseInt(chg.value.toString(), 10));
                 break;
             case "LargeNum":
-                item.setCurrentValue(parseFloat(chg.value.toString()));
+                item.setCurrentValue(parseFloat(removeAnyEditArtifacts(chg.value).toString()));
                 break;
             case "Boolean":
                 item.setCurrentValue(parseInt(chg.value.toString()));
@@ -424,7 +445,7 @@ export class MenuController {
                 item.setCurrentValue(chg.value as string[]);
                 break;
             default:
-                item.setCurrentValue(chg.value.toString());
+                item.setCurrentValue(removeAnyEditArtifacts(chg.value).toString());
                 break;
         }
         this.componentsById[chg.menuId]?.itemHasUpdated();

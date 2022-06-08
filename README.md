@@ -31,9 +31,9 @@ Once the above step is complete, there will be a deployable image in the `build`
 
     tcmenu wrap-ws --directory /Users/dave/IdeaProjects/embedcontrol/build --mode ESP_ASYNC
 
-## Documentation
+## Deploying for Raspberry PI Jetty
 
-Will be available soon.
+Copy all the files from the build directory into the root www directory on your Raspberry PI. For the standard plugin, we zip the contents of the build directory and package them with the plugin as a zip file. 
 
 ## Questions, community forum and support
 

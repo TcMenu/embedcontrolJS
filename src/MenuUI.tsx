@@ -126,7 +126,7 @@ export class SubMenuUI extends BaseMenuUI {
     }
 
     render() {
-        const listItems = this.renderableChildren.map((ch) => {
+        const listItems = this.renderableChildren.filter((it) => it.isVisible()).map((ch) => {
             switch (ch.messageType) {
                 case "Sub":
                     return <SubMenuUI controller={this.props.controller} itemId={ch.getMenuId()}/>;
@@ -257,7 +257,7 @@ export class TextBasedMenuUI extends BaseMenuUI {
     render() {
         if (this.editingMode) {
             return <div className="upDownControl">
-                <button className="rightBtn" onClick={this.submitPressed}>Submit</button>
+                <button className="rightBtn" disabled={this.readOnly} onClick={this.submitPressed}>Submit</button>
                 <button className="rightBtn" onClick={this.cancelPressed}>Cancel</button>
                 <form >
                     <label>{this.itemName}
@@ -274,6 +274,15 @@ export class TextBasedMenuUI extends BaseMenuUI {
     }
 }
 
+export class ListItemRowUI extends Component<{itemId: string, row: number, text: string, controller: MenuController}, any> {
+
+    render() {
+        return <button className="listElementButton" onClick={(e) =>
+            this.props.controller.sendListResponseUpdate(this.props.itemId, this.props.row, e.detail > 1)
+        }>{this.props.text}</button>;
+    }
+}
+
 export class ListMenuItemUI extends BaseMenuUI {
     private itemList = Array<string>();
 
@@ -287,7 +296,8 @@ export class ListMenuItemUI extends BaseMenuUI {
     }
 
     render() {
-        const listItems = this.itemList.map((data) => <li>{data}</li>);
+        let rowNum = 0;
+        const listItems = this.itemList.map((data) => <ListItemRowUI itemId={this.itemId} controller={this.props.controller} row={rowNum++} text={data}/>);
         return <div className={this.calculatedClass("upDownControl")}>
             <p>{this.itemName}</p>
             <ul>
@@ -315,7 +325,7 @@ export class ActionableTextMenuItem extends BaseMenuUI {
     }
 
     render() {
-        return <button className={this.calculatedClass("actionableItem")} onClick={this.buttonPressed}>{this.itemName}{this.state?.value}</button>
+        return <button disabled={this.readOnly} className={this.calculatedClass("actionableItem")} onClick={this.buttonPressed}>{this.itemName}{this.state?.value}</button>
     }
 }
 
@@ -373,7 +383,7 @@ export class Rgb32ColorEditor extends BaseMenuUI {
             </div>
         } else {
             return <div className={this.calculatedClass("upDownControl colorControl")} style={colStyle}>
-                <button className="rightBtn" onClick={this.editingRequested}>Change</button>
+                <button disabled={this.readOnly} className="rightBtn" onClick={this.editingRequested}>Change</button>
                 <div>{this.state?.value}</div>
             </div>
         }

@@ -181,6 +181,16 @@ button.actionableItem:hover {
   display: none;
 }
 
+.listElementButton {
+  display: block;
+  margin-bottom: 2px;
+  border: 0 !important;
+  background: transparent !important;
+  text-decoration: underline;
+  color: #181869;
+  cursor: pointer;
+}
+
 .settingsButton {
   float: right;
   font-size: 24px;
