@@ -129,6 +129,7 @@ export class MenuController {
         this.connector.registerConnectionListener((connected, why) => {
             if(connected) {
                 this.setCurrentState(ControllerState.CONNECTED);
+                this.lastHeartbeatRx = this.lastHeartbeatTx = Date.now();
                 this.sendMessage(
                     this.protocolHandler.convertCommandToWire(new HeartbeatCommand(this.hbFrequency, HeartbeatMode.START))
                 );
