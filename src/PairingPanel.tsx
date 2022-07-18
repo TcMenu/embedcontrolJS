@@ -1,5 +1,5 @@
 import {Component} from "react";
-import pairingImg from './img/pairingExample.jpg';
+import pairingImg from './img/pairing.webp';
 import {MenuController} from "./api/MenuController";
 
 enum PairingMode { NOT_STARTED, STARTED, DONE}

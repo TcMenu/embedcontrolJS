@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import logo from './img/large_icon.png';
+import logo from './img/large_icon.webp';
 import './App.css';
 import {MenuController} from "./api/MenuController";
 import {RootSubMenuUI} from "./MenuUI"
