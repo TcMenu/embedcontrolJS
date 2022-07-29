@@ -65,6 +65,29 @@ export enum ControllerState {
     FAILED_AUTHENTICATION,
     PAIRED_OK
 }
+
+function niceState(currentState: ControllerState) {
+    switch (currentState) {
+        case ControllerState.CONNECTED: return "Connected";
+        case ControllerState.BOOTSTRAP: return "Receiving Items";
+        case ControllerState.READY: return "Ready";
+        case ControllerState.FAILED_AUTHENTICATION: return "Not Authorized";
+        case ControllerState.PAIRED_OK: return "Paired";
+        case ControllerState.STOPPED:
+        case ControllerState.NOT_CONNECTED: return "Not Connected";
+    }
+}
+
+function nicePlatform(platform: ApiPlatform) {
+    switch (platform) {
+        case ApiPlatform.ARDUINO:
+        case ApiPlatform.ARDUINO_32: return "Arduino";
+        case ApiPlatform.JAVA_API: return "Java/PI";
+        case ApiPlatform.DNET_API: return ".NET";
+        case ApiPlatform.JS_API: return "JS"
+    }
+}
+
 export type MenuStateListener = (update: ControllerState) => void;
 
 export type CustomMessageHandler = (cmd: MenuCommand) => void;
@@ -160,15 +183,16 @@ export class MenuController {
     }
 
     public async attemptPairing(cb: PairingCallback): Promise<boolean> {
+        this.stop();
         this.pairingMode = true;
         this.start();
         const startTime = Date.now();
 
         try {
-            while ((Date.now() - startTime) < 20000) {
+            while ((Date.now() - startTime) < 60000) {
                 if (this.currentState === ControllerState.FAILED_AUTHENTICATION) return false;
                 if(this.currentState === ControllerState.PAIRED_OK) return true;
-                cb(ControllerState[this.currentState]);
+                cb(niceState(this.currentState));
                 await delay(500);
             }
         }
@@ -209,7 +233,7 @@ export class MenuController {
             ));
         }
 
-        if(!this.connector.isConnected() && (now - this.connector.lastDisconnectTime()) > 8000) {
+        if(!this.connector.isConnected() && (now - this.connector.lastDisconnectTime()) > (this.pairingMode ? 4000 : 8000)) {
             this.connector.start();
         }
 
@@ -220,7 +244,7 @@ export class MenuController {
 
     public getMenuName(): string {
         if(this.connector.isConnected()) {
-            return this.appName + ", V" + this.appVersion + " " + ApiPlatform[this.appPlatform];
+            return this.appName + ", V" + this.appVersion + " " + nicePlatform(this.appPlatform);
         }
         else {
             return "Lost connection";

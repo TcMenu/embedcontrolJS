@@ -239,3 +239,9 @@ img.pairing-image {
   float: left;
   margin: 10px;
 }
+
+@media only screen and (max-width: 768px) {
+  img.pairing-image {
+    float: none;
+  }
+}

@@ -4,26 +4,26 @@ import {MenuController} from "./api/MenuController";
 
 enum PairingMode { NOT_STARTED, STARTED, DONE}
 type PairingPanelProps = { controller: MenuController };
-type PairingPanelState = { status: string, buttonText: string, pairingMode: PairingMode };
+type PairingPanelState = { buttonText: string, pairingMode: PairingMode };
 
 export class PairingPanel extends Component<PairingPanelProps, PairingPanelState> {
 
     constructor(props: Readonly<PairingPanelProps> | PairingPanelProps) {
         super(props);
-        this.state = {status: "Not started", buttonText: "Start pairing with device", pairingMode: PairingMode.NOT_STARTED};
+        this.state = {buttonText: "Start pairing with device", pairingMode: PairingMode.NOT_STARTED};
         this.pairingButtonClicked = this.pairingButtonClicked.bind(this);
     }
 
     async pairingButtonClicked() {
         if(this.state.pairingMode === PairingMode.NOT_STARTED) {
             const paired = await this.props.controller.attemptPairing((update: string) => {
-                this.setState({status: update, buttonText: "Stop pairing attempt", pairingMode: PairingMode.STARTED});
+                this.setState({buttonText: update, pairingMode: PairingMode.STARTED});
             });
             if(paired) {
-                this.setState({status: "Successfully paired", buttonText: "Close and reconnect", pairingMode: PairingMode.DONE});
+                this.setState({buttonText: "Successfully paired, close", pairingMode: PairingMode.DONE});
             }
             else {
-                this.setState({status: "Pairing unsuccessful", buttonText: "Try pairing again", pairingMode: PairingMode.NOT_STARTED});
+                this.setState({buttonText: "Failed, try pairing again", pairingMode: PairingMode.NOT_STARTED});
             }
         }
         else if(this.state.pairingMode === PairingMode.STARTED) {
@@ -36,14 +36,12 @@ export class PairingPanel extends Component<PairingPanelProps, PairingPanelState
 
     render() {
         return <div>
-            <h2>Device requires that you pair with it</h2>
+            <h2>Device requires pairing</h2>
             <img src={pairingImg} className="pairing-image" alt="Example pairing screen on device"/>
-            <p>The connection to the device was not allowed, you need to pair with the device first. To do this
-            make sure that the device close by before proceeding, as you will need to 'Accept' the pairing on
-            the device itself.</p>
-            <p>Over to the left is how the pairing screen looks, you simply choose the accept option to allow this
-            device to connect. Ensure you only ever press accept when you are pairing yourself.</p>
-            <p>Current Status: <span>{this.state.status}</span></p>
+            <p>This device only allows authorized connections, you need to pair with the device in order to monitor and
+                control it. Make sure that the device is within reach as you will need to press 'Accept' on the device itself.</p>
+            <p>An example of how the pairing screen will look is presented above, pressing accept gives this connection complete
+                control of the device. Ensure you only ever press accept when you are pairing yourself.</p>
             <div>
                 <button className="settingsButton" onClick={this.pairingButtonClicked}>{this.state.buttonText}</button>
             </div>

@@ -80,7 +80,7 @@ export enum DialogMode {
 }
 
 export enum ApiPlatform {
-    ARDUINO, ARDUINO_32, JAVA_API,DNET_API,JS_API
+    ARDUINO = 0, ARDUINO_32 = 2, JAVA_API = 1, DNET_API = 3,JS_API = 4
 }
 
 export enum AckStatus {

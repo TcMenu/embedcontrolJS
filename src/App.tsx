@@ -56,9 +56,7 @@ class App extends Component<any, {settingsActive: boolean}> {
           <header className="App-header">
             <button onClick={this.settingsButtonWasPressed} className="settingsButton"><i className="fa fa-cog"/></button>
             <img src={logo} className="App-logo" alt="logo"/>
-            <p>
-              {App.globalSettings.getAppName()}
-            </p>
+            <p>embedCONTROL {process.env.REACT_APP_VERSION}</p>
           </header>
           <DialogItemUI controller={App.globalController}/>
           <RootSubMenuUI itemId="0" controller={App.globalController}/>

@@ -23,6 +23,7 @@ export class WebSocketConnector implements APIConnector {
         console.info(`Start connection to ${this.getName()}`);
         this.state = CurrentSocketState.CONNECTING;
         this.socket = new WebSocket(this.url);
+        this.lastDisconnect = 0;
 
         this.socket.onclose = (evt) => {
             console.info(`Connection reported onClose ${this.getName()}`);
