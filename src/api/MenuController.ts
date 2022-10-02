@@ -92,12 +92,6 @@ export type MenuStateListener = (update: ControllerState) => void;
 
 export type CustomMessageHandler = (cmd: MenuCommand) => void;
 
-function removeAnyEditArtifacts(value: string | string[]) {
-    const strVal = value.toString();
-    const rex = /[[\]]/;
-    return strVal.replaceAll(rex, strVal);
-}
-
 export class MenuController {
     private readonly menuTree: MenuTree;
     private readonly protocolHandler: TcProtocolHandler;
@@ -458,7 +452,7 @@ export class MenuController {
                 item.setCurrentValue(parseInt(chg.value.toString(), 10));
                 break;
             case "LargeNum":
-                item.setCurrentValue(parseFloat(removeAnyEditArtifacts(chg.value).toString()));
+                item.setCurrentValue(parseFloat(chg.value.toString()));
                 break;
             case "Boolean":
                 item.setCurrentValue(parseInt(chg.value.toString()));
@@ -470,7 +464,7 @@ export class MenuController {
                 item.setCurrentValue(chg.value as string[]);
                 break;
             default:
-                item.setCurrentValue(removeAnyEditArtifacts(chg.value).toString());
+                item.setCurrentValue(chg.value.toString());
                 break;
         }
         this.componentsById[chg.menuId]?.itemHasUpdated();
